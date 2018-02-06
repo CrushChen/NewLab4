@@ -12,30 +12,25 @@
 using namespace std;
 
 ProcessTrace::ProcessTrace(const std::string &file_name) {
-    //string line; //line we will send to Execute()
-
-
     inputFileStream.open(file_name);
     if (inputFileStream.fail()) {
         cerr << "ERROR: file not found: " << file_name << "\n";
         exit(2);
     }
-
-    //While our file has another line, execute that line
-    Execute(file_name);
+    //execute the file
+    Execute();
 }
 
 ProcessTrace::~ProcessTrace() {
     inputFileStream.close();
 }
 
-void ProcessTrace::Execute(string line) {
+void ProcessTrace::Execute() {
     /* Cannot use istringstream to read uint8_t --
      * uint8_t is treated as unsigned char and will be read
      * as such. Must use unsigned ints, or in our case: uint16_t
      * https://stackoverflow.com/questions/25277218/how-to-read-numeric-data-as-uint8-t/25277376 */
-
-    istringstream tokenized(line); //to parse our string
+    string line;
     string command; //stores command name
     uint16_t address; //stores address parameter; we must use something larger than uint8_t, and this will work just fine
     uint16_t token; //for reading tokens from istringstream (see note above)
@@ -43,21 +38,29 @@ void ProcessTrace::Execute(string line) {
     unsigned int count; //number of times to add a value
     unsigned int lineNumber = 1;
 
+    getline(inputFileStream, line); //get first line of file
+    istringstream tokenized(line); //to parse our string
+
+    
+    /* First command of file will always be an alloc command
+     * Use this fact to immediately allocate pages to mem
+     */
+    tokenized >> command; //first word of line should be the command
+    transform(command.begin(), command.end(), command.begin(), ::tolower); //puts our string in lowercase
+    double numPages;
+    tokenized >> numPages;
+    mem::MMU mem(std::ceil(numPages / 0x1000));
 
     while (getline(inputFileStream, line)) {
         cout << lineNumber << ":" << line << "\n";
         lineNumber++;
+        istringstream tokenized(line);
 
-        tokenized >> command; //first word of line should be the command
+        tokenized >> command; 
         transform(command.begin(), command.end(), command.begin(), ::tolower); //puts our string in lowercase
 
-        double numPages;
-        tokenized >> numPages;
-
-        mem::MMU mem(std::ceil(numPages / 0x1000));
-
         if (command.compare("alloc") == 0) {
-            tokenized >> hex >> memorySize; //Get size of memory as hex
+            tokenized >> hex >> memorySize; //Get size of memory as hexa
             //memory.resize(memorySize, 0); //allocate array of memorySize and fill with 0
             // double numPages;
             //tokenized >> numPages;
@@ -133,14 +136,16 @@ void ProcessTrace::Execute(string line) {
             unsigned int i = 0;
             uint8_t temp[1];
             while (i < count) {
-                if (i % 16 == 0 && i != 0) {
-                    cout << "\n";
-                }
-                mem.get_byte(temp, address);
-                //cout << " " << std::setw(2) << std::setfill('0') << std::hex << unsigned(data[0]);
+                mem.get_byte(temp, (addr + offset));
                 printf("%02x ", temp[0]);
+                if (i % 16 == 15)
+                    cout << endl;
                 i++;
+                offset++;
 
+            }
+            if (i % 16 == 0 && i != 0) {
+                cout << "\n";
             }
             cout << "\n";
         }
