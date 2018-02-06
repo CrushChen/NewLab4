@@ -32,7 +32,7 @@ public:
      * Execute - executes commands specified in our file.
      * @param command takes a string to be parsed.
     */
-    void Execute(string command);
+    void Execute();
     
     /**
      * printVector - prints a range of the contents of our vector 
