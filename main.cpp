@@ -1,19 +1,26 @@
-/*
- * OS Directed Study Fall 2017
- * Lab 2 Sample Code
- */
-
 /* 
  * File:   main.cpp
- * Author: Mike Goss <mikegoss@cs.du.edu>
- * Modified By: Peter Gish
+ * Author: Tristan Gay
  *
- * Created on October 1, 2017, 4:53 PM
+ * Created on January 27, 2018, 12:38 AM
  */
 
-#include "ProcessTrace.h"
 #include <cstdlib>
+#include <algorithm>
+#include <cctype>
+#include <iomanip>
 #include <iostream>
+#include <sstream>
+#include "ProcessTrace.h"
+
+
+using std::cin;
+using std::cout;
+using std::cerr;
+using std::getline;
+using std::istringstream;
+using std::string;
+using std::vector;
 
 /*
  * 
@@ -21,13 +28,12 @@
 int main(int argc, char** argv) {
   // Use command line argument as file name
   if (argc != 2) {
-    std::cerr << "usage: Lab2 trace_file\n";
+    std::cerr << "usage: Lab3 file\n";
     exit(1);
   }
   
   ProcessTrace trace(argv[1]);
-  trace.Execute();
+
   std::cout << "Done.\n";
   return 0;
 }
-
