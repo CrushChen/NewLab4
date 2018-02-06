@@ -47,9 +47,13 @@ void ProcessTrace::Execute() {
      */
     tokenized >> command; //first word of line should be the command
     transform(command.begin(), command.end(), command.begin(), ::tolower); //puts our string in lowercase
-    double numPages;
-    tokenized >> numPages;
-    mem::MMU mem(std::ceil(numPages / 0x1000));
+    double temp, numPages;
+    tokenized >> temp;
+    numPages = temp / 1000;
+    mem::MMU mem(ceil(numPages));   
+    
+    cout << lineNumber << ":" << line << "\n";
+    lineNumber++;
 
     while (getline(inputFileStream, line)) {
         cout << lineNumber << ":" << line << "\n";
@@ -89,12 +93,20 @@ void ProcessTrace::Execute() {
             offset = 0;
             tokenized >> hex >> address;
 
+            uint8_t temp[2];
+            uint8_t single_byte[1];
             while (tokenized >> token) {
                 //memory.at(address+offset)=token;
-                uint8_t temp[1];
-                temp[0] = token;
-                mem.put_byte((address + offset), temp);
-                offset++;
+                temp[1] = token & 0x00FF;
+                temp[0] = token & 0xFF00;
+                if(temp[0] == 0){
+                    single_byte[0] = temp[1];
+                    mem.put_byte((address + offset), single_byte);
+                    offset++;
+                } else {
+                    mem.put_bytes((address + offset), 2, temp);
+                    offset+= 2;
+                }
             }
         } else if (command.compare("fill") == 0) {
             uint16_t value;
@@ -103,12 +115,20 @@ void ProcessTrace::Execute() {
             tokenized >> hex >> count;
             tokenized >> hex >> value;
 
-            uint8_t temp[1];
+            uint8_t temp[2];
+            uint8_t single_byte[1];
             for (int i = 0; i < count; i++) {
                 //memory.at(address+offset) = value;
-                temp[0] = value;
-                mem.put_byte((address + offset), temp);
-                offset++;
+                temp[1] = value & 0x00FF;
+                temp[0] = value & 0xFF00;
+                if(temp[0] == 0){
+                    single_byte[0] = temp[1];
+                    mem.put_byte((address + offset), single_byte);
+                    offset++;
+                } else {
+                    mem.put_bytes((address + offset), 2, temp);
+                    offset+= 2;
+                }
             }
         } else if (command.compare("copy") == 0) {
             unsigned int dest_addr;
