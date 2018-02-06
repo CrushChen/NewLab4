@@ -8,6 +8,7 @@
 #include "ProcessTrace.h"
 #include <sstream> //istringstream
 #include <algorithm> //transform (putting our command in lowercase)
+#include <cmath>
 
 using namespace std;
 
@@ -48,9 +49,9 @@ void ProcessTrace::Execute() {
     tokenized >> command; //first word of line should be the command
     transform(command.begin(), command.end(), command.begin(), ::tolower); //puts our string in lowercase
     double temp, numPages;
-    tokenized >> temp;
-    numPages = temp / 1000;
-    mem::MMU mem(ceil(numPages));   
+    tokenized >> temp; 
+    numPages = temp / 1000; //determines the necessary number of page frames based on memory size
+    mem::MMU mem(ceil(numPages));
     
     cout << lineNumber << ":" << line << "\n";
     lineNumber++;
@@ -64,11 +65,8 @@ void ProcessTrace::Execute() {
         transform(command.begin(), command.end(), command.begin(), ::tolower); //puts our string in lowercase
 
         if (command.compare("alloc") == 0) {
-            tokenized >> hex >> memorySize; //Get size of memory as hexa
+            tokenized >> hex >> memorySize; //Get size of memory as hex
             //memory.resize(memorySize, 0); //allocate array of memorySize and fill with 0
-            // double numPages;
-            //tokenized >> numPages;
-            //mem::MMU mem(std::ceil(numPages/0x1000));
 
         } else if (command.compare("compare") == 0) {//compare addr expected_values
             vector<uint8_t> expected_values;
@@ -93,17 +91,17 @@ void ProcessTrace::Execute() {
             offset = 0;
             tokenized >> hex >> address;
 
-            uint8_t temp[2];
-            uint8_t single_byte[1];
+            uint8_t temp[2]; //prepare for a possible 16 bit value
+            uint8_t single_byte[1]; 
             while (tokenized >> token) {
                 //memory.at(address+offset)=token;
                 temp[1] = token & 0x00FF;
                 temp[0] = token & 0xFF00;
-                if(temp[0] == 0){
+                if(temp[0] == 0){ //check to see if value is stored in 1 byte
                     single_byte[0] = temp[1];
                     mem.put_byte((address + offset), single_byte);
                     offset++;
-                } else {
+                } else { //if its a 2 byte value, write both bytes
                     mem.put_bytes((address + offset), 2, temp);
                     offset+= 2;
                 }
@@ -115,17 +113,17 @@ void ProcessTrace::Execute() {
             tokenized >> hex >> count;
             tokenized >> hex >> value;
 
-            uint8_t temp[2];
+            uint8_t temp[2]; //prepare for a possible 16 bit value
             uint8_t single_byte[1];
             for (int i = 0; i < count; i++) {
                 //memory.at(address+offset) = value;
                 temp[1] = value & 0x00FF;
                 temp[0] = value & 0xFF00;
-                if(temp[0] == 0){
+                if(temp[0] == 0){ //check to see if value is stored in 1 byte
                     single_byte[0] = temp[1];
                     mem.put_byte((address + offset), single_byte);
                     offset++;
-                } else {
+                } else { //if its a 2 byte value, write both bytes
                     mem.put_bytes((address + offset), 2, temp);
                     offset+= 2;
                 }
